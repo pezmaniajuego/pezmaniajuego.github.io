@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+      content="width=device-width,
+       initial-scale=1.0">
+    <link rel="stylesheet" href="css/estilos.css">
+    <title>Pezmania</title>
+    <script>
+      function aleatorio(menor, mayor) {
+        return menor + Math.floor(Math.random() * (mayor - menor + 1));
+      }
+      function seTocan(e1, e2) {
+        const rE1 = e1.getBoundingClientRect();
+        const rE2 = e2.getBoundingClientRect();
+        return (rE1.right >= rE2.left &&
+          rE1.left <= rE2.right &&
+          rE1.top <= rE2.bottom &&
+          rE1.bottom >= rE2.top);
+      }
+      function empezarJuego(){
+          modal.style.display="none";
+          gameOver.style.display='none';
+          detenerJuego.value='play';
+          juego.style.filter='blur(0px)';
+          pezMuerto.src = 'img/pez.png';
+          let pez = document.querySelector("pez-jugador");
+          pez.x = Math.floor(window.innerWidth / 11);
+          pez.y= window.innerHeight / 3;
+          pez.style.left = `${pez.x}px`;
+          pez.style.bottom = `${pez.y}px`;
+          puntaje.value="0"; 
+          var audio = document.getElementById("audioFondo");
+          audio.play();
+        }
+      function ceMurio(){
+          detenerJuego.value='stop';
+          gameOver.style.display='block';
+          juego.style.filter='blur(2px)';
+          document.getElementById('puntajeObtenido').innerHTML = puntaje.value;
+          var audio = document.getElementById("audioPerdiste");
+          audio.play();
+        }
+      function tecla(event){
+        let pezJu = new PezJugador();
+        if(event.keyCode == 37){
+          pezJu.retrocede();
+        }
+        else if (event.keyCode == 39){
+          pezJu.avanza();
+        }
+        else if (event.keyCode == 38){
+          pezJu.sube();
+          //window.alert("HOLA");
+        }
+        else if (event.keyCode == 40){
+          pezJu.baja();
+        }
+      }
+      function juegoTerminado(){
+        var mod = document.getElementById('miModal');
+        mod.style.display = "block"; 
+      }
+      window.onkeydown = tecla;
+    </script>
+    <script>
+      /**------------------Esta es la clase del pez principal, la que controla el jugador.--------------------*/
+      class PezJugador extends HTMLElement {
+        connectedCallback() {
+          this.x = Math.floor(window.innerWidth / 20);
+          this.y= window.innerHeight / 3;
+          this.innerHTML = "<output id='pez'> <img src='img/pez.png' id='pezMuerto' width='120px' height='70px'> </output>";
+          this.style.position = "fixed";
+          this.style.fontSize = "3rem";
+          this.style.left = `${this.x}px`;
+          this.style.bottom = `${this.y}px`;
+        }
+        /**Este metodo por el momento no se ocupa*/
+        muévete() {
+          this.y = window.innerHeight / 3 + window.innerHeight / 20 * Math.sin(0.02 * this.x);
+          this.style.left = `${this.x}px`;
+          this.style.bottom = `${this.y}px`;
+          this.x = (this.x + 30) %  window.innerWidth;
+        }
+        retrocede() {
+            if(detenerJuego.value == 'play'){
+              let valor = document.querySelector("pez-jugador");
+              if (valor.x > window.innerWidth / 11) {
+                valor.x = (valor.x - 30) % window.innerWidth;
+                valor.style.left= `${valor.x}px`;
+              }
+            }
+        }
+        avanza() {
+          if(detenerJuego.value == 'play'){
+             let valor = document.querySelector("pez-jugador");
+             if (valor.x <  4 * window.innerWidth / 5) {
+                valor.x = (valor.x + 30) % window.innerWidth;
+                valor.style.left= `${valor.x}px`;     
+             }
+          }
+        }
+        sube() {
+           if(detenerJuego.value == 'play'){
+             let valor = document.querySelector("pez-jugador");
+             if (valor.y < window.innerHeight / 1.2) {
+                valor.y = (valor.y + 30) %  window.innerHeight;
+                valor.style.bottom = `${valor.y}px`;   
+                //window.alert("HOLA");
+              }
+            }
+        }
+        baja() {
+          if(detenerJuego.value == 'play'){
+            let valor = document.querySelector("pez-jugador");
+            if (valor.y >  window.innerHeight / 14) {
+                valor.y = (valor.y - 30) % window.innerHeight; 
+                valor.style.bottom = `${valor.y}px`;
+                //window.alert("HOLA");
+            }   
+          } 
+        } 
+      }
+      customElements.define("pez-jugador", PezJugador);
+      /**------------------Esta es la clase del gusano que es la comida del pez principal.--------------------*/
+      class GusanoComida extends HTMLElement {
+        connectedCallback() {
+          this.x = window.innerWidth / 20;
+          this.y = aleatorio(0,Math.floor(window.innerHeight / 1.7));
+          this.innerHTML = "<output id='gusano'> <img src='img/gusano.png' width='87px' height='39px'> </output";
+          this.style.position ="fixed";
+          this.style.fontSize ="2rem";
+          this.style.right =`${this.x}px`;
+          this.style.bottom =`${this.y}px`;
+        }
+        muévete() {
+            if(detenerJuego.value == 'play'){
+                if (seTocan(this, pez)) {
+                  this.x = 4 * window.innerWidth / 4;
+                  this.y = aleatorio(0,Math.floor(window.innerHeight / 1.7));
+                  this.style.right = `${this.x}px`;
+                  this.style.bottom = `${this.y}px`;
+                  puntaje.value=parseInt(puntaje.value,10)+1;
+                  var audio = document.getElementById("audioComer");
+                  audio.play();
+                } else {
+                  this.y = this.y + window.innerHeight / 800 * Math.sin(0.02 * this.x);
+                  this.style.right = `${this.x}px`;
+                  this.style.bottom = `${this.y}px`;
+                  this.x = (this.x + 0.7) %  window.innerWidth;
+                }
+                if(this.x > 4 * window.innerWidth / 4.050){
+                  this.x = 4 * window.innerWidth / 4;
+                  this.y = aleatorio(0,Math.floor(window.innerHeight / 1.7));
+                  this.style.right = `${this.x}px`;
+                  this.style.bottom = `${this.y}px`;
+                  //window.alert("HOLA");
+                }  
+            }
+        }
+      }
+      customElements.define("gusano-comida", GusanoComida);
+      /**------------------Esta es la clase del pez linterna, es el enemigo del pez principal.--------------------*/
+      class PezLinterna extends HTMLElement {
+        connectedCallback() {
+          this.x = window.innerWidth / 20;
+          this.y = aleatorio(0,Math.floor(window.innerHeight / 1.2));
+          this.innerHTML = "<output id='pezLin'> <img src='img/pezlin.png' id='pezLinImg' width='190px' height='140px'> </output";
+          this.style.position ="fixed";
+          this.style.fontSize ="2rem";
+          this.style.right =`${this.x}px`;
+          this.style.bottom =`${this.y}px`;
+        }
+        muévete() {
+          if(detenerJuego.value == 'play'){
+            if (seTocan(this, pez)) {
+            pezMuerto.src = 'img/pezMuerto.png';
+            this.x = 4 * window.innerWidth / 4;
+            this.y = aleatorio(0,Math.floor(window.innerHeight / 1.7));
+            this.style.right = `${this.x}px`;
+            this.style.bottom = `${this.y}px`;
+            ceMurio();
+            } else {
+              this.y = this.y + window.innerHeight / 1000 * Math.sin(0.06 * this.x);
+              this.style.right = `${this.x}px`;
+              this.style.bottom = `${this.y}px`;
+              this.x = (this.x + 0.6) %  window.innerWidth;
+            }
+            if(this.x > 4 * window.innerWidth / 4.050){
+              this.x = 4 * window.innerWidth / 4;
+              this.y = aleatorio(0,Math.floor(window.innerHeight / 1.7));
+              this.style.right = `${this.x}px`;
+              this.style.bottom = `${this.y}px`;
+              //window.alert("HOLA");
+            }
+          }  
+        }
+      }
+      customElements.define("pez-linterna", PezLinterna);
+      /**------------------Esta es la clase del pez piraña, es el segundo enemigo del pez principal.--------------------*/
+      class PezPiraña extends HTMLElement {
+        connectedCallback() {
+          this.x = 4 * window.innerWidth / 4;
+          this.y = aleatorio(0,Math.floor(window.innerHeight / 1.7));
+          this.innerHTML = "<output id='piraña'> <img src='img/piraña.png' id='pezPiImg' width='120px' height='70px'> </output";
+          this.style.position = "fixed";
+          this.style.fontSize = "2.5rem";
+          this.style.right = `${this.x}px`;
+          this.style.top = `${this.y}px`;
+        }
+        muévete() {
+          if(detenerJuego.value == 'play'){
+              if (seTocan(this, pez)) {
+                pezMuerto.src = 'img/pezMuerto.png';
+                ceMurio();
+                this.x = 4 * window.innerWidth / 4;
+                this.y = aleatorio(0,Math.floor(window.innerHeight / 1.7));
+                this.style.right = `${this.x}px`;
+                this.style.top = `${this.y}px`;
+                //var mod=document.getElementById("miModal");
+                //mod.style.display='block';
+              } else {
+                this.y = this.y + window.innerHeight / 1000 * Math.sin(0.02 * this.x);
+                this.style.right = `${this.x}px`;
+                this.style.top = `${this.y}px`;
+                this.x = (this.x + 1.2) %  window.innerWidth;
+              }
+              if(this.x > 4 * window.innerWidth / 4.050){
+                this.x = 4 * window.innerWidth / 4;
+                this.y = aleatorio(0,Math.floor(window.innerHeight / 1.7));
+                this.style.right = `${this.x}px`;
+                this.style.top = `${this.y}px`;
+                //window.alert("HOLA");
+              }
+          }
+        }
+      }
+      customElements.define("pez-pirana", PezPiraña);
+      /**------------------Esta es la clase del pez controlador, la cual controla los metodos de las demás clases.--------------------*/
+      class ControladorWeb extends HTMLElement {
+        connectedCallback() {
+          this.muévete = this.muévete.bind(this);
+          this.retrocede = this.retrocede.bind(this);
+          this.avanza = this.avanza.bind(this);
+          this.sube = this.sube.bind(this);
+          this.baja = this.baja.bind(this);
+          this.innerHTML =
+            /* html */
+            `<button class="controles" onclick="this.parentElement.sube();">
+                ▲
+            </button><br>
+            <button class="controles" onclick="this.parentElement.retrocede();">
+                ◀
+            </button>
+            <button class="controles" onclick="this.parentElement.baja();">
+                ▼
+            </button>
+            <button class="controles" onclick="this.parentElement.avanza();">
+                ▶
+            </button><br>`;
+          this.pezJu = new PezJugador();
+          this.gusano = new GusanoComida();
+          this.pezLin = new PezLinterna();
+          const personajes = [new PezPiraña(), new PezPiraña(), new PezPiraña(), new GusanoComida(), new PezLinterna()];
+          this.append(this.pezJu);
+          for (let per of personajes) {
+            document.body.append(per);
+          }
+          let intervalo = setInterval(mueve, 5);
+          function mueve() {
+            for (var per of personajes) {
+              per.muévete();
+            }
+          }
+        }
+        retrocede(){
+          this.pezJu.retrocede();
+        }
+        avanza(){
+          this.pezJu.avanza();
+        }
+        sube(){
+          this.pezJu.sube();
+        }
+        baja(){
+          this.pezJu.baja();
+        }
+        muévete() {
+          this.pezJu.muévete();
+        }
+      }
+      customElements.define("controlador-web",ControladorWeb);
+    </script>
+  </head>
+  <body>
+    <audio id="audioFondo" controls>
+      <source type="audio/mp3" src="audio/musicaFondo.mp3">
+    </audio>
+    <audio id="audioComer" controls>
+      <source type="audio/mp3" src="audio/comer.mp3">
+    </audio>
+    <audio id="audioPerdiste" controls>
+      <source type="audio/mp3" src="audio/perdiste.mp3">
+    </audio>
+    <input type="hidden" id="detenerJuego" value="stop"/>
+    <div class="puntaje">
+      <h5 id="mensajePuntuacion">Puntaje: <input type="text" id="puntaje" value="0" disabled></h5>
+    </div>
+    <h1></h1>
+    <div id="modal" class="modal" style=" display:block;">
+      <div class="modal-contenido">
+        <h2 class="titulo">Pezmania</h2>
+        <h4 class="instrucciones">Instrucciones</h4>
+        <p class="texto">
+          Pezmania es un juego de peces en donde tú puedes controlar los movimientos del pez principal, 
+          utilizando el teclado de tu ordenador o las flechas que se encuentran en pantalla.
+        </p>
+        <p class="texto">
+          Deberas moverte estrategicamente para evitar ser acechado por los peces enemigos y al mismo tiempo podras alimentarte 
+          de lombrices que apareceran aleatoriamente en la pantalla, al comerte una lombriz el marcador del puntaje sumara 1 punto,
+          pero si te llegan a tocar los peces enemigos perderas todos tus puntos y el juego terminará.
+        </p>
+        <p class="texto">
+          Podras jugar nuevamente al darle clic al boton de "Volver a jugar". 
+          Juega con tus amigos y prueba quien puede obtener el mayor puntaje en una sola partida.
+        </p>
+        <h4 class="instrucciones">Controles del juego</h4>
+        <p class="texto">
+          Para mover al pez principal deberás utilizar las teclas de navegación, 
+          arriba, abajo, izquierda y derecha o también puedes utilizar las flechas 
+          que aparecen en pantalla dando clic sobre ellas para ejecutar un movimiento. 
+        </p>
+        <button class="botonJugar" onclick="empezarJuego();">Comenzar a jugar</button>
+        <img class="imgBienvenida" src='img/bienvenido.png'>
+      </div>  
+    </div>
+    <div id="gameOver" class="modal" style="display:in-line;">
+      <div class="modal-contenido">
+          <p class="puntajeFinal" id="puntajeObtenido"></p>
+          <img class="imgGameOver" src='img/game-over6.png'>
+        <button class="botonJugar" onclick="empezarJuego();">Volver a jugar</button>
+      </div>  
+    </div>
+    <section id="juego" class="botones" style="filter: blur(2px)">
+      <h3 id="mensajePuntuacion">Controles</h3>
+      <controlador-web>        
+      </controlador-web>
+    </section>
+    <footer class="pie">
+      <p > &copy; 2021 Luis Antonio Franco Mendoza.</p>
+    </footer>
+  </body>
+</html>
